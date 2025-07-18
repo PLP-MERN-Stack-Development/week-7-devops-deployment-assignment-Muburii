@@ -1,33 +1,38 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const connectDB = require("./config/db");
-
+const mongoose = require("mongoose"); // Import mongoose directly
 const app = express();
+
+// Connect to MongoDB
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('MongoDB connected successfully!');
+  } catch (error) {
+    console.error(`MongoDb connection failed: ${error.message}`);
+    process.exit(1);
+  }
+};
 connectDB();
 
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://week-7-devops-deployment-assignment-mcjf.onrender.com",
-];
+// Health Check Endpoint
+app.get("/health", (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  res.status(200).json({
+    status: "UP",
+    database: dbStatus,
+    timestamp: new Date()
+  });
+});
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
-
+// Routes
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

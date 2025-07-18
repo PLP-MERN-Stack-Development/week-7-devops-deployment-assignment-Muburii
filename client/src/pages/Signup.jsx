@@ -26,7 +26,7 @@ export default function Signup() {
     }
     setLoading(true);
     try {
-      const res = await API.post("/auth/signup", { username, email, password });
+      const res = await API.post("/api/auth/signup", { username, email, password });
       if (!res.data?.token) {
         alert("Signup failed: No token received");
         return;
